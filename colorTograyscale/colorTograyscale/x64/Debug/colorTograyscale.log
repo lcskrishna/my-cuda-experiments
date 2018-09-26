@@ -1,0 +1,7 @@
+﻿  main.cpp
+  colorTograyscale.vcxproj -> C:\Users\lolla\Documents\Study\Research\Cuda\Practise\colorTograyscale\x64\Debug\colorTograyscale.exe
+  colorTograyscale.vcxproj -> C:\Users\lolla\Documents\Study\Research\Cuda\Practise\colorTograyscale\x64\Debug\colorTograyscale.pdb (Full PDB)
+  copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.0\bin\cudart*.dll" "C:\Users\lolla\Documents\Study\Research\Cuda\Practise\colorTograyscale\x64\Debug\"
+  C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.0\bin\cudart32_90.dll
+  C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.0\bin\cudart64_90.dll
+          2 file(s) copied.
