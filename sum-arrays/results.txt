@@ -1,0 +1,32 @@
+Experiment: Block size used is:  64
+Both the CPU and GPU results match.
+Sum array CPU execution time      : 0.040214
+H to D mem transfer time          : 0.006314
+Sum array GPU execution time      : 0.000249
+D to H mem transfer time          : 0.003389
+Sum array GPU total execution time: 0.009955
+
+Experiment: Block size used is:  128
+Both the CPU and GPU results match.
+Sum array CPU execution time      : 0.040268
+H to D mem transfer time          : 0.006252
+Sum array GPU execution time      : 0.000179
+D to H mem transfer time          : 0.003404
+Sum array GPU total execution time: 0.009837
+
+Experiment: Block size used is:  256
+Both the CPU and GPU results match.
+Sum array CPU execution time      : 0.040150
+H to D mem transfer time          : 0.006310
+Sum array GPU execution time      : 0.000171
+D to H mem transfer time          : 0.003385
+Sum array GPU total execution time: 0.009869
+
+Experiment: Block size used is:  512
+Both the CPU and GPU results match.
+Sum array CPU execution time      : 0.040086
+H to D mem transfer time          : 0.006275
+Sum array GPU execution time      : 0.000178
+D to H mem transfer time          : 0.003385
+Sum array GPU total execution time: 0.009840
+
