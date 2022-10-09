@@ -7,6 +7,27 @@ This kernel will fill an allocatoin with a constant value 'val'.
 
 template<int N_DIMS>
 __global__ void
+kernel_fill_apply_v2_dim1(device_tensor<N_DIMS> x, const float val){
+  int tid = threadIdx.x;
+  int offset = blockIdx.x * blockDim.x;
+  int gid = tid + offset;
+  x.at_linear(gid) = val;
+}
+
+template<int N_DIMS>
+__global__ void
+kernel_fill_apply_v2_dim2(device_tensor<N_DIMS> x, const float val){
+  int tid = blockDim.x * threadIdx.y + threadIdx.x;
+  int num_threads_per_block = blockDim.x * blockDim.y;
+  int block_offset = blockIdx.x * num_threads_per_block;
+  int num_threads_in_row = num_threads_per_block * gridDim.x;
+  int row_offset = num_threads_in_row * blockIdx.y;
+  int gid = tid + block_offset + row_offset;
+  x.at_linear(gid) = val;
+}
+
+template<int N_DIMS>
+__global__ void
 kernel_fill_apply(device_tensor<N_DIMS> x, const float val){
 
   size_t i = threadIdx.x;
@@ -20,7 +41,20 @@ kernel_fill_apply(device_tensor<N_DIMS> x, const float val){
 //GPU kernel wrapper for fill_apply.
 template<int N_DIMS>
 void fill_apply(device_tensor<N_DIMS>& x, const float val){
-  kernel_fill_apply<N_DIMS> <<<1, 32>>>(x, val);
+  if (N_DIMS == 2) {
+    int rows = x.size[0];
+    int cols = x.size[1];
+    dim3 block(32, 32);
+    dim3 grid(rows/block.x, cols/block.y);
+    kernel_fill_apply_v2_dim2<N_DIMS> <<<grid, block>>>(x, val);
+  } else if (N_DIMS == 1) {
+    int cols = x.size[0];
+    dim3 block(32);
+    dim3 grid(cols/block.x);
+    kernel_fill_apply_v2_dim1<N_DIMS> <<<grid, block>>>(x, val);
+  } else {
+    kernel_fill_apply<N_DIMS> <<<1, 32>>>(x, val);
+  }
 }
 
 
