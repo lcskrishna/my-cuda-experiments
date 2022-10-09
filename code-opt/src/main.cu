@@ -18,7 +18,6 @@ host_tensor<2> op_and_normalize(host_tensor<2> &input){
     float val = input.at_linear(i);
     input.at_linear(i) = sinh((double) val/1.9);
   }
-  //std::cout << "input size is : " << input.size[0] <<  " " << input.size[1] << " " << std::endl;
 
   host_tensor<1> ave({input.size[0]});
   for(int i=0; i<input.size[0]; i++){
@@ -56,7 +55,9 @@ device_tensor<2> op_and_normalize(device_tensor<2> &input){
   device_tensor<2> scale(input, false);
   fill_apply<2>(scale, 1.9);
   input = pointwise_apply<div_op, 2>(input, scale);
+  std::cout << "Applying sinh operation" << std::endl;
   input = pointwise_apply<sinh_op, 2>(input);
+  std::cout << "Done Applying sinh operation" << std::endl;
 
   auto ave = reduce_apply<add_op>(input);
 
