@@ -8,7 +8,11 @@ struct square_op{
 
 struct sinh_op{
   __host__ __device__ static inline float op(const float& a){
+#if 0
     return sinh( (double) a );
+#else
+    return sinhf(a);
+#endif
   }
 };
 

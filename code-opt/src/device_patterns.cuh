@@ -72,13 +72,14 @@ kernel_pointwise_apply(device_tensor<N_DIMS> out,
 
 template<typename op, int N_DIMS>
 __global__ void
-kernel_pointwise_apply_v2(device_tensor<N_DIMS> out,
-		       const device_tensor<N_DIMS> x){
+kernel_pointwise_apply_v2(float * out, float * input, int num_elem){
 
-  size_t i = threadIdx.x;
-  while(i < out.get_n_elems()){
-    out.at_linear(i) = op::op(x.at_linear(i));
-    i += blockDim.x;
+  int tid = threadIdx.x;
+  int offset = blockIdx.x * blockDim.x;
+  int gid = tid + offset;
+  
+  if (gid < num_elem) {
+    out[gid] = op::op(input[gid]); 
   }
 
 }
@@ -87,22 +88,24 @@ kernel_pointwise_apply_v2(device_tensor<N_DIMS> out,
 template<typename op, int N_DIMS>
 device_tensor<N_DIMS> pointwise_apply(const device_tensor<N_DIMS>& x)
 {
+#if 0
   device_tensor<N_DIMS> out(x.size);
-  std::cout << "Total number of elements is : " << x.get_n_elems() << std::endl;
   kernel_pointwise_apply<op, N_DIMS> <<<1, 32>>>(out, x);
   return out;
+#else
+  device_tensor<N_DIMS> out(x.size);
+  auto total_elem = x.get_n_elems();
+  float * input_ptr = x.get();
+  float * output_ptr = out.get();
+
+  dim3 block(32);
+  dim3 grid(total_elem/block.x);
+  
+  kernel_pointwise_apply_v2<op, N_DIMS> <<<grid, block>>>(output_ptr, input_ptr, total_elem);
+  return out;
+#endif
 }
 
-//GPU kernel wrapper for pointwise apply (v2)
-template<typename op, int N_DIMS>
-device_tensor<N_DIMS> pointwise_apply_v2(const device_tensor<N_DIMS>& x)
-{
-  device_tensor<N_DIMS> out(x.size);
-  dim3 block_size(32, 32);
-  dim3 grid_size(128, 32);
-  kernel_pointwise_apply_v2<op, N_DIMS> <<<grid_size, block_size>>>(out, x);
-  return out;
-}
 
 
 /* REDUCTION KERNEL
