@@ -72,17 +72,28 @@ kernel_pointwise_apply(device_tensor<N_DIMS> out,
 
 template<typename op, int N_DIMS>
 __global__ void
-kernel_pointwise_apply_v2(float * out, float * input, int num_elem){
+kernel_pointwise_apply_v2_dim2(device_tensor<N_DIMS> out,
+		       const device_tensor<N_DIMS> x){
+    //int col = blockIdx.x * blockDim.x + threadIdx.x;
+    //int row = blockIdx.y * blockDim.y + threadIdx.y;
+    //out.at(row, col) = op::op(x.at(row, col));
+    int tid = blockDim.x * threadIdx.y + threadIdx.x;
+    int num_threads_per_block = blockDim.x * blockDim.y;
+    int block_offset = blockIdx.x * num_threads_per_block;
+    int num_threads_in_row = num_threads_per_block * gridDim.x;
+    int row_offset = num_threads_in_row * blockIdx.y;
+    int gid = tid + block_offset + row_offset;
 
-  int tid = threadIdx.x;
-  int offset = blockIdx.x * blockDim.x;
-  int gid = tid + offset;
-  
-  if (gid < num_elem) {
-    out[gid] = op::op(input[gid]); 
-  }
-
+    out.at_linear(gid) = op::op(x.at_linear(gid));
 }
+
+//template<typename op>
+//__global__ void
+//kernel_pointwise_apply_v2_dim1(device_tensor<N_DIMS> out,
+//		       const device_tensor<N_DIMS> x){
+//    int col = blockIdx.x * blockDim.x + threadIdx.x;
+//    out.at(col) = op::op(x.at(col));
+//}
 
 //GPU kernel wrapper for pointwise apply
 template<typename op, int N_DIMS>
@@ -94,18 +105,27 @@ device_tensor<N_DIMS> pointwise_apply(const device_tensor<N_DIMS>& x)
   return out;
 #else
   device_tensor<N_DIMS> out(x.size);
-  auto total_elem = x.get_n_elems();
-  float * input_ptr = x.get();
-  float * output_ptr = out.get();
-
-  dim3 block(32);
-  dim3 grid(total_elem/block.x);
-  
-  kernel_pointwise_apply_v2<op, N_DIMS> <<<grid, block>>>(output_ptr, input_ptr, total_elem);
-  return out;
+  if (N_DIMS == 2) {
+    int rows = x.size[0];
+    int cols = x.size[1];
+    dim3 block(32, 32);
+    dim3 grid(rows/block.x, cols/block.y);
+    kernel_pointwise_apply_v2_dim2<op, N_DIMS> <<<grid, block>>>(out, x);
+    return out; 
+  }
+  // else if (N_DIMS == 1) {
+  //  int cols = x.size[0];
+  //  dim3 block(32);
+  //  dim3 grid(cols/block.x);
+  //  kernel_pointwise_apply_v2_dim1<op> <<<grid, block>>>(out, x);
+  //  return out;
+  //}
+   else {
+    kernel_pointwise_apply<op, N_DIMS> <<<1, 32>>>(out, x);
+    return out;
+  }
 #endif
 }
-
 
 
 /* REDUCTION KERNEL
