@@ -271,13 +271,6 @@ template<typename op>
 __global__ void
 kernel_broadcast_apply_v2(device_tensor<2> out,
 		       const device_tensor<1> x, const device_tensor<2> y){
-  //size_t i = threadIdx.x;
-  //while(i<x.size[0]){
-  //  for(size_t j=0; j<y.size[1]; j++){
-  //    out.at(i, j) = op::op(x.at(i), y.at(i, j));
-  //  }
-  //  i += blockDim.x;
-  //}
   int rowidx = threadIdx.x + blockIdx.x * blockDim.x;
   if (rowidx < x.size[0]) {
     for (int j = 0; j < y.size[1]; j++) {
@@ -306,13 +299,6 @@ template<typename op>
 __global__ void
 kernel_broadcast_apply_v2(device_tensor<2> out,
 		       const device_tensor<2> x, const device_tensor<1> y){
-  //size_t i = threadIdx.x;
-  //while(i<x.size[0]){
-  //  for(size_t j=0; j<x.size[1]; j++){
-  //    out.at(i, j) = op::op(x.at(i, j), y.at(i));
-  //  }
-  //  i += blockDim.x;
-  //}
   int rowidx = threadIdx.x + blockDim.x * blockIdx.x;
   if (rowidx < x.size[0]) {
     for (int j=0; j < x.size[1]; j++) {
@@ -326,7 +312,7 @@ template<typename op>
 device_tensor< 2 > broadcast_apply(const device_tensor<2>& x, const device_tensor<1>& y){
   assert( x.size[0] == y.get_n_elems() );
   device_tensor<2> out(x.size);
-  dim3 block(32);
+  dim3 block(64);
   dim3 grid(x.size[0]/block.x);
 #if 0
   kernel_broadcast_apply<op> <<<x.size[0]/256, 256>>>(out, x, y);
@@ -341,7 +327,7 @@ template<typename op>
 device_tensor< 2 > broadcast_apply(const device_tensor<1>& x, const device_tensor<2>& y){
   assert( x.get_n_elems() == y.size[0] );
   device_tensor<2> out(y.size);
-  dim3 block(32);
+  dim3 block(64);
   dim3 grid(y.size[0]/block.x);
 #if 0
   kernel_broadcast_apply<op> <<<y.size[0]/256, 256>>>(out, x, y);
