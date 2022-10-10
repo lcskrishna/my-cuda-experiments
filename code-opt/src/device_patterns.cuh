@@ -210,7 +210,6 @@ __global__ void  reduce_dim_1(device_tensor<1> out,
   while(i<in.size[0]){
 
     float red = op::init();
-
     for(size_t j=0; j<in.size[1]; j++){
       red = op::op(in.at(i, j), red);
     }
@@ -222,12 +221,46 @@ __global__ void  reduce_dim_1(device_tensor<1> out,
 
 }
 
+template<typename op>
+__global__ void  reduce_dim_1_v2(device_tensor<1> out,
+	     const device_tensor<2> in){
+
+  //size_t i = threadIdx.x;
+  //while(i<in.size[0]){
+
+  //  __shared__ float red;
+
+  //  for(size_t j=0; j<in.size[1]; j++){
+  //    red = op::op(in.at(i, j), red);
+  //  }
+
+  //  out.at(i) = red;
+  //  i += blockDim.x;
+
+  //}
+  int rowidx = threadIdx.x + blockIdx.x * blockDim.x;
+  if (rowidx < in.size[0]) {
+    float red = op::init();
+    for (int j = 0; j < in.size[1]; j++) {
+        red = op::op(in.at_linear(rowidx * in.size[1] + j), red);
+    }
+    out.at(rowidx) = red;
+  }
+
+}
+
 //GPU kernel wrapper for reduce dim=1
 template<typename op>
 device_tensor<1> reduce_apply(const device_tensor<2>& x)
 {
   device_tensor<1> out({x.size[0]});
-  reduce_dim_1<op> <<<1, 256>>>(out, x);
+  dim3 block(32);
+  dim3 grid(x.size[0]/block.x);
+#if 0
+  reduce_dim_1<op> <<<grid, block>>>(out, x);
+#else
+  reduce_dim_1_v2<op> <<<grid, block>>>(out, x);
+#endif
   return out;
 }
 
@@ -241,7 +274,6 @@ kernel_broadcast_apply(device_tensor<2> out,
 		       const device_tensor<1> x, const device_tensor<2> y){
   size_t i = threadIdx.x;
   while(i<x.size[0]){
-    #pragma unroll
     for(size_t j=0; j<y.size[1]; j++){
       out.at(i, j) = op::op(x.at(i), y.at(i, j));
     }
@@ -258,7 +290,6 @@ kernel_broadcast_apply(device_tensor<2> out,
 		       const device_tensor<2> x, const device_tensor<1> y){
   size_t i = threadIdx.x;
   while(i<x.size[0]){
-    #pragma unroll
     for(size_t j=0; j<x.size[1]; j++){
       out.at(i, j) = op::op(x.at(i, j), y.at(i));
     }
