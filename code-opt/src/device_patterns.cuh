@@ -78,6 +78,18 @@ kernel_pointwise_apply(device_tensor<N_DIMS> out,
 
 template<typename op, int N_DIMS>
 __global__ void
+kernel_pointwise_apply_v2_dim1(device_tensor<N_DIMS> out,
+		       const device_tensor<N_DIMS> x, const device_tensor<N_DIMS> y){
+
+  int tid = threadIdx.x;
+  int offset = blockDim.x * blockIdx.x;
+  int gid = tid + offset;
+
+  out.at_linear(gid) = op::op(x.at_linear(gid), y.at_linear(gid));
+}
+
+template<typename op, int N_DIMS>
+__global__ void
 kernel_pointwise_apply_v2_dim2(device_tensor<N_DIMS> out,
 		       const device_tensor<N_DIMS> x, const device_tensor<N_DIMS> y){
 
@@ -102,6 +114,12 @@ device_tensor<N_DIMS> pointwise_apply(const device_tensor<N_DIMS>& x, const devi
     dim3 block(32, 32);
     dim3 grid(rows/block.x, cols/block.y);
     kernel_pointwise_apply_v2_dim2<op, N_DIMS> <<<grid, block>>>(out, x, y);
+    return out;
+  } else if (N_DIMS == 1) {
+    int cols = x.size[0];
+    dim3 block(32);
+    dim3 grid(cols/block.x);
+    kernel_pointwise_apply_v2_dim1<op, N_DIMS> <<<grid, block>>>(out, x, y);
     return out;
   } else {
     kernel_pointwise_apply<op, N_DIMS> <<<1, 32>>>(out, x, y);
@@ -130,6 +148,17 @@ kernel_pointwise_apply(device_tensor<N_DIMS> out,
 
 template<typename op, int N_DIMS>
 __global__ void
+kernel_pointwise_apply_v2_dim1(device_tensor<N_DIMS> out,
+		       const device_tensor<N_DIMS> x){
+    int tid = threadIdx.x;
+    int offset = blockDim.x * blockIdx.x;
+    int gid = tid + offset;
+
+    out.at_linear(gid) = op::op(x.at_linear(gid));
+}
+
+template<typename op, int N_DIMS>
+__global__ void
 kernel_pointwise_apply_v2_dim2(device_tensor<N_DIMS> out,
 		       const device_tensor<N_DIMS> x){
     int tid = blockDim.x * threadIdx.y + threadIdx.x;
@@ -146,11 +175,6 @@ kernel_pointwise_apply_v2_dim2(device_tensor<N_DIMS> out,
 template<typename op, int N_DIMS>
 device_tensor<N_DIMS> pointwise_apply(const device_tensor<N_DIMS>& x)
 {
-#if 0
-  device_tensor<N_DIMS> out(x.size);
-  kernel_pointwise_apply<op, N_DIMS> <<<1, 32>>>(out, x);
-  return out;
-#else
   device_tensor<N_DIMS> out(x.size);
   if (N_DIMS == 2) {
     int rows = x.size[0];
@@ -159,19 +183,16 @@ device_tensor<N_DIMS> pointwise_apply(const device_tensor<N_DIMS>& x)
     dim3 grid(rows/block.x, cols/block.y);
     kernel_pointwise_apply_v2_dim2<op, N_DIMS> <<<grid, block>>>(out, x);
     return out; 
-  }
-  // else if (N_DIMS == 1) {
-  //  int cols = x.size[0];
-  //  dim3 block(32);
-  //  dim3 grid(cols/block.x);
-  //  kernel_pointwise_apply_v2_dim1<op> <<<grid, block>>>(out, x);
-  //  return out;
-  //}
-   else {
+  } else if (N_DIMS == 1) {
+    int cols = x.size[0];
+    dim3 block(32);
+    dim3 grid(cols/block.x);
+    kernel_pointwise_apply_v2_dim1<op> <<<grid, block>>>(out, x);
+    return out;
+  } else {
     kernel_pointwise_apply<op, N_DIMS> <<<1, 32>>>(out, x);
     return out;
   }
-#endif
 }
 
 
@@ -227,6 +248,28 @@ kernel_broadcast_apply(device_tensor<2> out,
   }
 }
 
+template<typename op>
+__global__ void
+kernel_broadcast_apply_v2(device_tensor<2> out,
+		       const device_tensor<1> x, const device_tensor<2> y){
+  //size_t i = threadIdx.x;
+  //while(i<x.size[0]){
+  //  for(size_t j=0; j<y.size[1]; j++){
+  //    out.at(i, j) = op::op(x.at(i), y.at(i, j));
+  //  }
+  //  i += blockDim.x;
+  //}
+  int col = blockIdx.x * blockDim.x + threadIdx.x;
+  int row = blockIdx.y * blockDim.y + threadIdx.y;
+  out.at(row, col) = op::op(x.at(row), y.at(row, col));
+  //int tid = blockDim.x * threadIdx.y + threadIdx.x;
+  //int num_threads_per_block = blockDim.x * blockDim.y;
+  //int block_offset = blockIdx.x * num_threads_per_block;
+  //int num_threads_in_row = num_threads_per_block * gridDim.x;
+  //int row_offset = num_threads_in_row * blockIdx.y;
+  //int gid = tid + block_offset + row_offset;
+}
+
 /* BROADCAST KERNELS */
 //Broadcasts tensor and applies to another in element wise fasion.
 //i.e. out [i, j] = op::op(A[i, j] + B[i])
@@ -236,6 +279,7 @@ kernel_broadcast_apply(device_tensor<2> out,
 		       const device_tensor<2> x, const device_tensor<1> y){
   size_t i = threadIdx.x;
   while(i<x.size[0]){
+    printf ("THe value off i is : %d", i);
     for(size_t j=0; j<x.size[1]; j++){
       out.at(i, j) = op::op(x.at(i, j), y.at(i));
     }
@@ -257,6 +301,14 @@ template<typename op>
 device_tensor< 2 > broadcast_apply(const device_tensor<1>& x, const device_tensor<2>& y){
   assert( x.get_n_elems() == y.size[0] );
   device_tensor<2> out(y.size);
+  int rows = x.size[0];
+  int cols = y.size[1];
+  dim3 block(32, 32);
+  dim3 grid(rows/block.x, cols/block.y);
+#if 0
+  kernel_broadcast_apply_v2<op><<<grid, block>>>(out, x, y);
+#else
   kernel_broadcast_apply<op> <<<1, 32>>>(out, x, y);
+#endif
   return out;
 }

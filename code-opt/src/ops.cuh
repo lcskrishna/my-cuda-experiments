@@ -41,7 +41,11 @@ struct mul_op{
 
 struct div_op{
   __host__ __device__ static inline float op(const float& a, const float& b){
+#if 1
     return a/b;
+#else
+    return __fdiv_rz(a, b);
+#endif
   }
 };
 
