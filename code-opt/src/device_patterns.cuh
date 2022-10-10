@@ -227,7 +227,7 @@ template<typename op>
 device_tensor<1> reduce_apply(const device_tensor<2>& x)
 {
   device_tensor<1> out({x.size[0]});
-  reduce_dim_1<op> <<<1, 32>>>(out, x);
+  reduce_dim_1<op> <<<1, 256>>>(out, x);
   return out;
 }
 
@@ -241,20 +241,12 @@ kernel_broadcast_apply(device_tensor<2> out,
 		       const device_tensor<1> x, const device_tensor<2> y){
   size_t i = threadIdx.x;
   while(i<x.size[0]){
+    #pragma unroll
     for(size_t j=0; j<y.size[1]; j++){
       out.at(i, j) = op::op(x.at(i), y.at(i, j));
     }
     i += blockDim.x;
   }
-}
-
-template<typename op>
-__global__ void
-kernel_broadcast_apply_v2(device_tensor<2> out,
-		       const device_tensor<1> x, const device_tensor<2> y){
-  int row = blockIdx.y * blockDim.y + threadIdx.y;
-  int col = blockIdx.x * blockDim.x + threadIdx.x;
-  out.at(row, col) = op::op(x.at(row), y.at(row, col));
 }
 
 /* BROADCAST KERNELS */
@@ -266,6 +258,7 @@ kernel_broadcast_apply(device_tensor<2> out,
 		       const device_tensor<2> x, const device_tensor<1> y){
   size_t i = threadIdx.x;
   while(i<x.size[0]){
+    #pragma unroll
     for(size_t j=0; j<x.size[1]; j++){
       out.at(i, j) = op::op(x.at(i, j), y.at(i));
     }
@@ -278,7 +271,9 @@ template<typename op>
 device_tensor< 2 > broadcast_apply(const device_tensor<2>& x, const device_tensor<1>& y){
   assert( x.size[0] == y.get_n_elems() );
   device_tensor<2> out(x.size);
-  kernel_broadcast_apply<op> <<<1, 32>>>(out, x, y);
+  dim3 block(32);
+  dim3 grid(x.size[0]/block.x);
+  kernel_broadcast_apply<op> <<<x.size[0]/256, 256>>>(out, x, y);
   return out;
 }
 
@@ -287,14 +282,6 @@ template<typename op>
 device_tensor< 2 > broadcast_apply(const device_tensor<1>& x, const device_tensor<2>& y){
   assert( x.get_n_elems() == y.size[0] );
   device_tensor<2> out(y.size);
-  int rows = x.size[0];
-  int cols = y.size[1];
-  dim3 block(32, 32);
-  dim3 grid(rows/block.x, cols/block.y);
-#if 0
-  kernel_broadcast_apply_v2<op><<<grid, block>>>(out, x, y);
-#else
-  kernel_broadcast_apply<op> <<<1, 32>>>(out, x, y);
-#endif
+  kernel_broadcast_apply<op> <<<y.size[0]/256, 256>>>(out, x, y);
   return out;
 }
