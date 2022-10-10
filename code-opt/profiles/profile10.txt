@@ -1,0 +1,37 @@
+==15024== NVPROF is profiling process 15024, command: ./bin/interview_problem.exe
+Finished in 47.3596 ms.
+==15024== Profiling application: ./bin/interview_problem.exe
+==15024== Warning: 3 API trace records have same start and end timestamps.
+This can happen because of short execution duration of CUDA APIs and low timer resolution on the underlying operating system.
+==15024== Profiling result:
+            Type  Time(%)      Time     Calls       Avg       Min       Max  Name
+ GPU activities:   26.59%  3.6635ms        16  228.97us  228.00us  230.11us  void kernel_broadcast_apply_v2<sub_op>(device_tensor<int=2>, device_tensor<int=2>, device_tensor<int=1>)
+                   15.78%  2.1736ms         1  2.1736ms  2.1736ms  2.1736ms  [CUDA memcpy DtoH]
+                   15.15%  2.0870ms         1  2.0870ms  2.0870ms  2.0870ms  [CUDA memcpy HtoD]
+                   13.45%  1.8535ms         8  231.69us  230.24us  233.47us  void kernel_broadcast_apply_v2<div_op>(device_tensor<int=2>, device_tensor<int=2>, device_tensor<int=1>)
+                    9.46%  1.3036ms        49  26.604us  3.0080us  53.728us  [CUDA memcpy DtoD]
+                    7.52%  1.0359ms        16  64.743us  63.424us  65.984us  void reduce_dim_1_v2<add_op>(device_tensor<int=1>, device_tensor<int=2>)
+                    3.80%  523.04us         8  65.379us  64.863us  66.400us  void kernel_pointwise_apply_v2_dim2<div_op, int=2>(device_tensor<int=2>, device_tensor<int=2>, device_tensor<int=2>)
+                    2.94%  405.28us         8  50.659us  50.111us  51.231us  void kernel_pointwise_apply_v2_dim2<sinh_op, int=2>(device_tensor<int=2>, device_tensor<int=2>)
+                    2.64%  364.00us         8  45.499us  45.087us  45.824us  void kernel_pointwise_apply_v2_dim2<square_op, int=2>(device_tensor<int=2>, device_tensor<int=2>)
+                    1.46%  200.83us         8  25.103us  21.728us  25.760us  void kernel_fill_apply_v2_dim2<int=2>(device_tensor<int=2>, float)
+                    0.43%  59.487us        16  3.7170us  3.4560us  4.0640us  void kernel_pointwise_apply_v2_dim1<div_op, int=1>(device_tensor<int=1>, device_tensor<int=1>, device_tensor<int=1>)
+                    0.37%  51.136us        16  3.1960us  2.8800us  3.7120us  void kernel_fill_apply_v2_dim1<int=1>(device_tensor<int=1>, float)
+                    0.23%  31.104us         8  3.8880us  3.7760us  4.0640us  void kernel_pointwise_apply_v2_dim1<add_op, int=1>(device_tensor<int=1>, device_tensor<int=1>, device_tensor<int=1>)
+                    0.18%  25.376us         8  3.1720us  3.1040us  3.3920us  void kernel_pointwise_apply_v2_dim1<square_root_op, int=1>(device_tensor<int=1>, device_tensor<int=1>)
+      API calls:   85.24%  206.09ms       122  1.6892ms  3.3470us  189.23ms  cudaMalloc
+                   12.00%  29.024ms       122  237.90us  2.8350us  592.88us  cudaFree
+                    2.16%  5.2207ms        51  102.37us  11.347us  2.3970ms  cudaMemcpy
+                    0.49%  1.1822ms       120  9.8510us  5.3150us  32.396us  cudaLaunchKernel
+                    0.07%  178.47us       101  1.7670us       0ns  48.760us  cuDeviceGetAttribute
+                    0.01%  25.569us         2  12.784us  2.0110us  23.558us  cudaEventCreate
+                    0.01%  22.507us         1  22.507us  22.507us  22.507us  cuDeviceGetName
+                    0.01%  18.685us         2  9.3420us  5.8280us  12.857us  cudaEventRecord
+                    0.00%  7.1700us         1  7.1700us  7.1700us  7.1700us  cuDeviceGetPCIBusId
+                    0.00%  7.0250us         1  7.0250us  7.0250us  7.0250us  cudaEventSynchronize
+                    0.00%  3.6320us         3  1.2100us     763ns  1.9790us  cuDeviceGetCount
+                    0.00%  2.9440us         1  2.9440us  2.9440us  2.9440us  cudaEventElapsedTime
+                    0.00%  1.5090us         1  1.5090us  1.5090us  1.5090us  cuDeviceTotalMem
+                    0.00%  1.0250us         1  1.0250us  1.0250us  1.0250us  cuModuleGetLoadingMode
+                    0.00%     852ns         1     852ns     852ns     852ns  cuDeviceGetUuid
+                    0.00%     787ns         2     393ns       0ns     787ns  cuDeviceGet
