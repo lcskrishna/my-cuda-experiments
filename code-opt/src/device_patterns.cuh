@@ -252,22 +252,9 @@ template<typename op>
 __global__ void
 kernel_broadcast_apply_v2(device_tensor<2> out,
 		       const device_tensor<1> x, const device_tensor<2> y){
-  //size_t i = threadIdx.x;
-  //while(i<x.size[0]){
-  //  for(size_t j=0; j<y.size[1]; j++){
-  //    out.at(i, j) = op::op(x.at(i), y.at(i, j));
-  //  }
-  //  i += blockDim.x;
-  //}
   int col = blockIdx.x * blockDim.x + threadIdx.x;
   int row = blockIdx.y * blockDim.y + threadIdx.y;
   out.at(row, col) = op::op(x.at(row), y.at(row, col));
-  //int tid = blockDim.x * threadIdx.y + threadIdx.x;
-  //int num_threads_per_block = blockDim.x * blockDim.y;
-  //int block_offset = blockIdx.x * num_threads_per_block;
-  //int num_threads_in_row = num_threads_per_block * gridDim.x;
-  //int row_offset = num_threads_in_row * blockIdx.y;
-  //int gid = tid + block_offset + row_offset;
 }
 
 /* BROADCAST KERNELS */
@@ -279,7 +266,6 @@ kernel_broadcast_apply(device_tensor<2> out,
 		       const device_tensor<2> x, const device_tensor<1> y){
   size_t i = threadIdx.x;
   while(i<x.size[0]){
-    printf ("THe value off i is : %d", i);
     for(size_t j=0; j<x.size[1]; j++){
       out.at(i, j) = op::op(x.at(i, j), y.at(i));
     }
