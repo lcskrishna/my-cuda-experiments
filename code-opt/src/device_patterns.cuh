@@ -252,8 +252,8 @@ template<typename op>
 __global__ void
 kernel_broadcast_apply_v2(device_tensor<2> out,
 		       const device_tensor<1> x, const device_tensor<2> y){
-  int col = blockIdx.x * blockDim.x + threadIdx.x;
   int row = blockIdx.y * blockDim.y + threadIdx.y;
+  int col = blockIdx.x * blockDim.x + threadIdx.x;
   out.at(row, col) = op::op(x.at(row), y.at(row, col));
 }
 
